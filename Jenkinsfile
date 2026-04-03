@@ -31,6 +31,28 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                sh """
+                    docker run --name test-container \
+                        --network tooling_app_network \
+                        -e MYSQL_IP=mysqlserverhost \
+                        -e MYSQL_USER=webaccess \
+                        -e MYSQL_PASS=Devopslearn# \
+                        -e MYSQL_DBNAME=toolingdb \
+                        -d -p 8086:80 \
+                        ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                    sleep 10
+                    curl -s -o /dev/null -w "%{http_code}" http://localhost:8086 | grep 200
+                """
+            }
+            post {
+                always {
+                    sh 'docker stop test-container && docker rm test-container || true'
+                }
+            }
+        }
+
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
