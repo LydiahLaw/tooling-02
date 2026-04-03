@@ -34,16 +34,17 @@ pipeline {
         stage('Test') {
             steps {
                 sh """
+                    docker stop test-container && docker rm test-container || true
                     docker run --name test-container \
                         --network tooling_app_network \
                         -e MYSQL_IP=mysqlserverhost \
                         -e MYSQL_USER=webaccess \
                         -e MYSQL_PASS=Devopslearn# \
                         -e MYSQL_DBNAME=toolingdb \
-                        -d -p 8086:80 \
-                        ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                    sleep 10
-                    curl -s -o /dev/null -w "%{http_code}" http://localhost:8086 | grep 200
+                        -d ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                    sleep 15
+                    TEST_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' test-container)
+                    curl -s -o /dev/null -w "%{http_code}" http://\$TEST_IP:80 | grep 200
                 """
             }
             post {
