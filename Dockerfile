@@ -11,6 +11,7 @@ RUN <<-EOF
  echo "ServerName localhost" >> /etc/apache2/apache2.conf
  curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 EOF
+COPY php-config.ini /usr/local/etc/php/conf.d/custom.ini
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 

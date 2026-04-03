@@ -1,73 +1,63 @@
 pipeline {
-  agent {
-    kubernetes {
-      yaml '''
-        apiVersion: v1
-        kind: Pod
-        spec:
-          containers:
-          - name: maven
-            image: maven:alpine
-            command:
-            - cat
-            tty: true
-          - name: docker
-            image: docker:latest
-            command:
-            - cat
-            tty: true
-            volumeMounts:
-             - mountPath: /var/run/docker.sock
-               name: docker-sock
-          volumes:
-          - name: docker-sock
-            hostPath:
-              path: /var/run/docker.sock    
-        '''
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "lydiahlaw"
+        IMAGE_NAME = "tooling"
+        IMAGE_TAG = "${env.BRANCH_NAME}-0.0.1"
     }
-  }
-  stages {
-    stage('Clone') {
-      steps {
-        container('maven') {
-          git branch: 'main', changelog: false, poll: false, url: 'https://mohdsabir-cloudside@bitbucket.org/mohdsabir-cloudside/java-app.git'
+
+    stages {
+
+        stage('Initial Cleanup') {
+            steps {
+                dir("${WORKSPACE}") {
+                    deleteDir()
+                }
+            }
         }
-      }
-    }  
-    stage('Build-Jar-file') {
-      steps {
-        container('maven') {
-          sh 'mvn package'
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
-    }
-    stage('Build-Docker-Image') {
-      steps {
-        container('docker') {
-          sh 'docker build -t steghubregistry/java-app:latest .'
+
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                    docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+                """
+            }
         }
-      }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                    """
+                }
+            }
+        }
+
+        stage('Cleanup Images') {
+            steps {
+                sh """
+                    docker rmi ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} || true
+                """
+            }
+        }
     }
-    stage('Login-Into-Docker') {
-      steps {
-        container('docker') {
-          sh 'docker login -u steghubregistry -p Phartion001ng'
-      }
-    }
-    }
-     stage('Push-Images-Docker-to-DockerHub') {
-      steps {
-        container('docker') {
-          sh 'docker push steghubregistry/java-app:latest'
-      }
-    }
-     }
-  }
+
     post {
-      always {
-        container('docker') {
-          sh 'docker logout'
-      }
-      }
+        always {
+            sh 'docker logout'
+        }
     }
 }
