@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY = "lydiahlaw"
         IMAGE_NAME = "tooling"
-        IMAGE_TAG = "${env.BRANCH_NAME}-0.0.1"
+        IMAGE_TAG = "${env.BRANCH_NAME.replace('/', '-')}-0.0.1"
     }
 
     stages {
