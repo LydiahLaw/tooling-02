@@ -38,14 +38,14 @@ version: "3.9"
 ```
 Specifies the Docker Compose file format version. From Compose v1.27.0 onwards this field is optional and can be omitted — newer versions will show a warning if included.
 
----
+
 
 ```yaml
 services:
 ```
 The top-level key that defines all containers in the stack. Each child key is a service name that becomes the container's hostname on the shared network.
 
----
+
 
 ```yaml
   tooling_frontend:
@@ -53,7 +53,7 @@ The top-level key that defines all containers in the stack. Each child key is a 
 ```
 Defines the PHP application service. `build: .` tells Compose to build the image from the `Dockerfile` in the current directory rather than pulling a pre-built image from a registry. Every time you run `docker compose up --build`, Docker rebuilds this image from scratch.
 
----
+
 
 ```yaml
     ports:
@@ -61,7 +61,7 @@ Defines the PHP application service. `build: .` tells Compose to build the image
 ```
 Maps port 80 inside the container (where Apache listens) to port 5000 on your host machine. Format is `host_port:container_port`. Port 80 on the host is typically already in use, so 5000 is used as the external-facing port.
 
----
+
 
 ```yaml
     volumes:
@@ -69,7 +69,7 @@ Maps port 80 inside the container (where Apache listens) to port 5000 on your ho
 ```
 Mounts a named volume (`tooling_frontend`) to the app directory inside the container. Named volumes persist data between container restarts — if the container stops and restarts, the files are not lost. The volume is managed by Docker and stored at Docker's internal storage location.
 
----
+
 
 ```yaml
     environment:
@@ -80,7 +80,7 @@ Mounts a named volume (`tooling_frontend`) to the app directory inside the conta
 ```
 Passes environment variables into the container at runtime. The PHP app reads these via `$_ENV` to establish the database connection. Note that `MYSQL_IP=db` uses the service name `db` as the hostname — Docker's internal DNS automatically resolves service names to container IPs on the same network.
 
----
+
 
 ```yaml
     links:
@@ -88,7 +88,7 @@ Passes environment variables into the container at runtime. The PHP app reads th
 ```
 Explicitly declares that `tooling_frontend` depends on and can communicate with the `db` service. While `depends_on` handles startup order, `links` creates a named alias for network communication. This is a legacy feature — on custom networks, containers can reach each other by service name without `links`.
 
----
+
 
 ```yaml
     depends_on:
@@ -96,7 +96,7 @@ Explicitly declares that `tooling_frontend` depends on and can communicate with 
 ```
 Ensures the `db` container starts before `tooling_frontend`. Without this, the PHP app might try to connect to MySQL before it is ready, causing a connection error on startup.
 
----
+
 
 ```yaml
   db:
@@ -104,14 +104,14 @@ Ensures the `db` container starts before `tooling_frontend`. Without this, the P
 ```
 Defines the MySQL database service. Unlike `tooling_frontend` which builds from a Dockerfile, this service uses the official `mysql:5.7` image pulled directly from Docker Hub. MySQL 5.7 is specified for compatibility with the Tooling app's SQL schema.
 
----
+
 
 ```yaml
     restart: always
 ```
 Tells Docker to automatically restart this container if it crashes or if the Docker daemon restarts. Options are `no`, `always`, `on-failure`, and `unless-stopped`. `always` is appropriate for a database that must stay available.
 
----
+
 
 ```yaml
     environment:
@@ -125,7 +125,7 @@ Environment variables consumed by the MySQL Docker image on first startup:
 - `MYSQL_USER` / `MYSQL_PASSWORD` — creates a non-root user with access to the above database
 - `MYSQL_RANDOM_ROOT_PASSWORD` — generates a random root password since direct root access is not needed. This is more secure than setting a known root password.
 
----
+
 
 ```yaml
     volumes:
@@ -133,7 +133,7 @@ Environment variables consumed by the MySQL Docker image on first startup:
 ```
 Mounts a named volume to MySQL's data directory. This persists your database data across container restarts and recreations. Without this, all data would be lost every time the container stops.
 
----
+
 
 ```yaml
 volumes:
