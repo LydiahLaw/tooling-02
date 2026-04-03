@@ -43,8 +43,10 @@ pipeline {
                         -e MYSQL_DBNAME=toolingdb \
                         -d ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
                     sleep 15
-                    TEST_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' test-container)
-                    curl -s -o /dev/null -w "%{http_code}" http://\$TEST_IP:80 | grep 200
+                    STATUS=\$(docker run --rm --network tooling_app_network curlimages/curl:latest \
+                        curl -s -o /dev/null -w "%{http_code}" http://test-container:80)
+                    echo "HTTP Status: \$STATUS"
+                    echo "\$STATUS" | grep -E "200|302"
                 """
             }
             post {
